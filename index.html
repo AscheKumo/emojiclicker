@@ -124,6 +124,41 @@
             overflow-y: auto;
         }
 
+        .panel-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-button {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 8px 16px;
+            color: #8b949e;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab-button:hover {
+            border-color: #58a6ff;
+            color: #58a6ff;
+        }
+
+        .tab-button.active {
+            background: #58a6ff;
+            color: white;
+            border-color: #58a6ff;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
         .upgrade-title {
             font-size: 1.5rem;
             margin-bottom: 20px;
@@ -209,6 +244,121 @@
             font-size: 0.9rem;
             color: #8b949e;
             margin-left: 10px;
+        }
+
+        .stats-container {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            color: #8b949e;
+        }
+
+        .stat-value {
+            color: #58a6ff;
+            font-weight: bold;
+        }
+
+        .options-section {
+            margin-bottom: 30px;
+        }
+
+        .option-button {
+            background: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 10px 20px;
+            color: #c9d1d9;
+            cursor: pointer;
+            width: 100%;
+            margin-bottom: 10px;
+            transition: all 0.2s;
+        }
+
+        .option-button:hover {
+            background: #30363d;
+            border-color: #58a6ff;
+        }
+
+        .option-button.danger {
+            border-color: #da3633;
+            color: #da3633;
+        }
+
+        .option-button.danger:hover {
+            background: #da3633;
+            color: white;
+        }
+
+        .confirm-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #161b22;
+            border: 2px solid #da3633;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+            z-index: 10001;
+            text-align: center;
+        }
+
+        .confirm-modal h3 {
+            color: #da3633;
+            margin-bottom: 15px;
+        }
+
+        .confirm-modal p {
+            margin-bottom: 20px;
+            color: #8b949e;
+        }
+
+        .confirm-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .confirm-button {
+            padding: 8px 20px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .confirm-button.yes {
+            background: #da3633;
+            color: white;
+        }
+
+        .confirm-button.no {
+            background: #21262d;
+            color: #c9d1d9;
+            border: 1px solid #30363d;
+        }
+
+        .confirm-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 10000;
         }
 
         .floating-emoji {
@@ -373,7 +523,7 @@
             transition: all 0.3s;
         }
 
-        .prestige-button:hover {
+        .prestige-button:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
         }
@@ -426,6 +576,15 @@
             }
         }
 
+        @keyframes rainbow-background {
+            0% { background: #0d1117; }
+            20% { background: #1a0d11; }
+            40% { background: #11170d; }
+            60% { background: #0d1117; }
+            80% { background: #110d1a; }
+            100% { background: #0d1117; }
+        }
+
         @media (max-width: 768px) {
             .game-container {
                 grid-template-columns: 1fr;
@@ -457,18 +616,96 @@
                 <div id="combo-display"></div>
             </div>
             <div class="bonus-display" id="bonus-display"></div>
-            <button class="prestige-button" id="prestige-btn" onclick="prestige()" disabled>
-                🌟 Prestige (Requires 1M stars) 🌟
+            <button class="prestige-button" id="prestige-btn" disabled>
+                🌟 Prestige (Requires 10M stars) 🌟
             </button>
         </div>
         
         <div class="upgrade-panel">
-            <h2 class="upgrade-title">Upgrades</h2>
-            <div id="upgrades"></div>
+            <div class="panel-tabs">
+                <button class="tab-button active" data-tab="upgrades">Upgrades</button>
+                <button class="tab-button" data-tab="stats">Stats</button>
+                <button class="tab-button" data-tab="options">Options</button>
+            </div>
+            
+            <div id="upgrades-tab" class="tab-content active">
+                <h2 class="upgrade-title">Upgrades</h2>
+                <div id="upgrades"></div>
+            </div>
+            
+            <div id="stats-tab" class="tab-content">
+                <h2 class="upgrade-title">Statistics</h2>
+                <div class="stats-container">
+                    <div class="stat-row">
+                        <span>Total Clicks:</span>
+                        <span class="stat-value" id="stat-clicks">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>Total Stars Earned:</span>
+                        <span class="stat-value" id="stat-total-stars">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>Prestige Level:</span>
+                        <span class="stat-value" id="stat-prestige">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>Play Time:</span>
+                        <span class="stat-value" id="stat-playtime">0s</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>Highest Combo:</span>
+                        <span class="stat-value" id="stat-combo">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>Lucky Clicks:</span>
+                        <span class="stat-value" id="stat-lucky">0</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>Critical Hits:</span>
+                        <span class="stat-value" id="stat-crits">0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="options-tab" class="tab-content">
+                <h2 class="upgrade-title">Options</h2>
+                
+                <div class="options-section">
+                    <h3 class="section-title">Save Data</h3>
+                    <button class="option-button" id="export-btn">📤 Export Save</button>
+                    <button class="option-button" id="import-btn">📥 Import Save</button>
+                    <input type="file" id="import-file" style="display: none;" accept=".txt">
+                </div>
+                
+                <div class="options-section">
+                    <h3 class="section-title">Game Info</h3>
+                    <div class="stats-container">
+                        <div class="stat-row">
+                            <span>Version:</span>
+                            <span class="stat-value">2.0</span>
+                        </div>
+                        <div class="stat-row">
+                            <span>Player:</span>
+                            <span class="stat-value">AscheKumo</span>
+                        </div>
+                        <div class="stat-row">
+                            <span>Save Date:</span>
+                            <span class="stat-value" id="save-date">-</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="options-section">
+                    <h3 class="section-title">Reset Progress</h3>
+                    <button class="option-button danger" id="soft-reset-btn">🔄 Soft Reset (Keep Prestige)</button>
+                    <button class="option-button danger" id="hard-reset-btn">⚠️ Hard Reset (Lose Everything)</button>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
+        // Game state variables
         let score = 0;
         let clickPower = 1;
         let autoClickPower = 0;
@@ -486,6 +723,13 @@
         let offlineProgress = 0;
         let totalClicks = 0;
         let achievedMilestones = [];
+        
+        // Stats tracking
+        let totalStarsEarned = 0;
+        let playStartTime = Date.now();
+        let highestCombo = 0;
+        let luckyClicks = 0;
+        let criticalHits = 0;
 
         const mainEmojis = ['😊', '😄', '😎', '🤩', '🥳', '🚀', '⭐', '🌟', '✨', '💫'];
 
@@ -507,135 +751,148 @@
                 id: 'cursor',
                 name: 'Auto Cursor',
                 emoji: '👆',
-                baseCost: 10,
+                baseCost: 15,
                 power: 0.1,
                 owned: 0,
                 description: 'Automatically clicks for you',
-                category: 'auto'
+                category: 'auto',
+                costMultiplier: 1.25
             },
             {
                 id: 'helper',
                 name: 'Emoji Helper',
                 emoji: '🤝',
-                baseCost: 50,
+                baseCost: 100,
                 power: 0.5,
                 owned: 0,
                 description: 'A friendly helper emoji',
-                category: 'auto'
+                category: 'auto',
+                costMultiplier: 1.28
             },
             {
                 id: 'robot',
                 name: 'Click Bot',
                 emoji: '🤖',
-                baseCost: 200,
+                baseCost: 500,
                 power: 2,
                 owned: 0,
                 description: 'Advanced clicking robot',
-                category: 'auto'
+                category: 'auto',
+                costMultiplier: 1.3
             },
             {
                 id: 'ninja',
                 name: 'Ninja Clicker',
                 emoji: '🥷',
-                baseCost: 800,
+                baseCost: 2500,
                 power: 8,
                 owned: 0,
                 description: 'Silent but efficient',
-                category: 'auto'
+                category: 'auto',
+                costMultiplier: 1.32
             },
             {
                 id: 'factory',
                 name: 'Emoji Factory',
                 emoji: '🏭',
-                baseCost: 3000,
+                baseCost: 12000,
                 power: 30,
                 owned: 0,
                 description: 'Mass produces clicks',
-                category: 'auto'
+                category: 'auto',
+                costMultiplier: 1.35
             },
             {
                 id: 'wizard',
                 name: 'Click Wizard',
                 emoji: '🧙‍♂️',
-                baseCost: 12000,
+                baseCost: 60000,
                 power: 120,
                 owned: 0,
                 description: 'Magical clicking powers',
-                category: 'auto'
+                category: 'auto',
+                costMultiplier: 1.38
             },
             {
                 id: 'alien',
                 name: 'Alien Technology',
                 emoji: '👽',
-                baseCost: 50000,
+                baseCost: 300000,
                 power: 500,
                 owned: 0,
                 description: 'Out of this world clicking',
-                category: 'auto'
+                category: 'auto',
+                costMultiplier: 1.4
             },
             {
                 id: 'dragon',
                 name: 'Click Dragon',
                 emoji: '🐉',
-                baseCost: 200000,
+                baseCost: 1500000,
                 power: 2000,
                 owned: 0,
                 description: 'Legendary clicking beast',
-                category: 'auto'
+                category: 'auto',
+                costMultiplier: 1.42
             },
             {
                 id: 'quantum',
                 name: 'Quantum Computer',
                 emoji: '💻',
-                baseCost: 1000000,
+                baseCost: 10000000,
                 power: 10000,
                 owned: 0,
                 description: 'Clicks in multiple dimensions',
-                category: 'auto'
+                category: 'auto',
+                costMultiplier: 1.45
             },
             {
                 id: 'blackhole',
                 name: 'Black Hole',
                 emoji: '🕳️',
-                baseCost: 10000000,
+                baseCost: 100000000,
                 power: 100000,
                 owned: 0,
                 description: 'Absorbs clicks from the void',
-                category: 'auto'
+                category: 'auto',
+                costMultiplier: 1.48
             },
             {
                 id: 'universe',
                 name: 'Universe Engine',
                 emoji: '🌌',
-                baseCost: 100000000,
+                baseCost: 1000000000,
                 power: 1000000,
                 owned: 0,
                 description: 'Harnesses cosmic energy',
-                category: 'auto'
+                category: 'auto',
+                costMultiplier: 1.5
             },
             // Power-ups
             {
                 id: 'doubleclick',
                 name: 'Double Click',
                 emoji: '✌️',
-                baseCost: 100,
+                baseCost: 200,
                 power: 1,
                 owned: 0,
                 maxOwned: 10,
                 description: 'Doubles your click power',
                 category: 'power',
+                costMultiplier: 2,
                 effect: () => { clickPower *= 2; }
             },
             {
                 id: 'turbo',
                 name: 'Turbo Mode',
                 emoji: '⚡',
-                baseCost: 300,
+                baseCost: 750,
                 power: 0.2,
                 owned: 0,
                 maxOwned: 15,
                 description: 'All auto-clickers +20% speed',
                 category: 'power',
+                costMultiplier: 1.8,
                 effect: () => { 
                     upgrades.forEach(u => {
                         if (u.category === 'auto') u.power *= 1.2;
@@ -647,56 +904,60 @@
                 id: 'lucky',
                 name: 'Lucky Charm',
                 emoji: '🍀',
-                baseCost: 500,
+                baseCost: 1500,
                 power: 0.05,
                 owned: 0,
                 maxOwned: 20,
                 description: '5% chance for 10x clicks',
                 category: 'power',
+                costMultiplier: 1.6,
                 effect: () => { luckyClickChance += 0.05; }
             },
             {
                 id: 'critical',
                 name: 'Critical Hit',
                 emoji: '💥',
-                baseCost: 2000,
+                baseCost: 8000,
                 power: 0.5,
                 owned: 0,
                 maxOwned: 10,
                 description: 'Critical clicks deal +50% damage',
                 category: 'power',
+                costMultiplier: 1.7,
                 effect: () => { criticalClickMultiplier += 0.5; }
             },
             {
                 id: 'combo',
                 name: 'Combo Master',
                 emoji: '🔥',
-                baseCost: 5000,
+                baseCost: 25000,
                 power: 0,
                 owned: 0,
                 maxOwned: 5,
                 description: 'Combos last 50% longer',
                 category: 'power',
+                costMultiplier: 2.5,
                 effect: () => { /* Implemented in combo logic */ }
             },
             {
                 id: 'multiplier',
                 name: 'Star Multiplier',
                 emoji: '✖️',
-                baseCost: 20000,
+                baseCost: 100000,
                 power: 0,
                 owned: 0,
                 maxOwned: 3,
-                description: 'All earnings x2',
+                description: 'All earnings x1.5',
                 category: 'power',
-                effect: () => { prestigeBonus *= 2; }
+                costMultiplier: 3,
+                effect: () => { prestigeBonus *= 1.5; }
             },
             // Special
             {
                 id: 'golden',
                 name: 'Golden Touch',
                 emoji: '👑',
-                baseCost: 10000,
+                baseCost: 50000,
                 power: 0,
                 owned: 0,
                 maxOwned: 1,
@@ -708,7 +969,7 @@
                 id: 'rainbow',
                 name: 'Rainbow Mode',
                 emoji: '🌈',
-                baseCost: 50000,
+                baseCost: 250000,
                 power: 0,
                 owned: 0,
                 maxOwned: 1,
@@ -720,7 +981,7 @@
                 id: 'timewarp',
                 name: 'Time Warp',
                 emoji: '⏰',
-                baseCost: 100000,
+                baseCost: 500000,
                 power: 0,
                 owned: 0,
                 maxOwned: 1,
@@ -729,10 +990,10 @@
                 effect: () => { offlineProgress = 0.5; }
             },
             {
-                id: 'quantum',
+                id: 'quantumleap',
                 name: 'Quantum Leap',
                 emoji: '⚛️',
-                baseCost: 500000,
+                baseCost: 2500000,
                 power: 0,
                 owned: 0,
                 maxOwned: 1,
@@ -744,7 +1005,7 @@
                 id: 'infinity',
                 name: 'Infinity Mode',
                 emoji: '♾️',
-                baseCost: 10000000,
+                baseCost: 50000000,
                 power: 0,
                 owned: 0,
                 maxOwned: 1,
@@ -757,6 +1018,7 @@
         // Store references to upgrade elements
         const upgradeElements = {};
 
+        // Helper functions
         function formatNumber(num) {
             if (num >= 1e15) return (num / 1e15).toFixed(1) + 'Q';
             if (num >= 1e12) return (num / 1e12).toFixed(1) + 'T';
@@ -766,6 +1028,21 @@
             return Math.floor(num).toString();
         }
 
+        function formatTime(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = Math.floor(seconds % 60);
+            
+            if (hours > 0) {
+                return `${hours}h ${minutes}m ${secs}s`;
+            } else if (minutes > 0) {
+                return `${minutes}m ${secs}s`;
+            } else {
+                return `${secs}s`;
+            }
+        }
+
+        // Main game functions
         function updateDisplay() {
             document.getElementById('score').textContent = formatNumber(score);
             document.getElementById('per-second').textContent = formatNumber(autoClickPower * prestigeBonus);
@@ -790,13 +1067,30 @@
 
             // Update prestige button
             const prestigeBtn = document.getElementById('prestige-btn');
-            if (score >= 1000000) {
+            if (score >= 10000000) {
                 prestigeBtn.disabled = false;
-                prestigeBtn.textContent = `🌟 Prestige for ${Math.floor(Math.sqrt(score / 1000000))} prestige points 🌟`;
+                prestigeBtn.textContent = `🌟 Prestige for ${Math.floor(Math.sqrt(score / 10000000))} prestige points 🌟`;
+            } else {
+                prestigeBtn.disabled = true;
+                prestigeBtn.textContent = `🌟 Prestige (Requires ${formatNumber(10000000)} stars) 🌟`;
             }
 
             // Update bonus display
             updateBonusDisplay();
+            
+            // Update stats
+            updateStats();
+        }
+
+        function updateStats() {
+            document.getElementById('stat-clicks').textContent = formatNumber(totalClicks);
+            document.getElementById('stat-total-stars').textContent = formatNumber(totalStarsEarned);
+            document.getElementById('stat-prestige').textContent = prestigeLevel;
+            document.getElementById('stat-playtime').textContent = formatTime((Date.now() - playStartTime) / 1000);
+            document.getElementById('stat-combo').textContent = highestCombo;
+            document.getElementById('stat-lucky').textContent = formatNumber(luckyClicks);
+            document.getElementById('stat-crits').textContent = formatNumber(criticalHits);
+            document.getElementById('save-date').textContent = new Date().toLocaleString();
         }
 
         function updateBonusDisplay() {
@@ -820,11 +1114,13 @@
             // Lucky click
             if (Math.random() < luckyClickChance) {
                 clickValue *= 10;
+                luckyClicks++;
                 showFloatingText(event, `LUCKY! +${formatNumber(clickValue)}🌟`, '#ffd700');
             }
             // Critical click
             else if (Math.random() < 0.1) {
                 clickValue *= criticalClickMultiplier;
+                criticalHits++;
                 showFloatingText(event, `CRIT! +${formatNumber(clickValue)}🌟`, '#ff6b6b');
             }
             // Normal click
@@ -833,9 +1129,11 @@
             }
             
             score += clickValue;
+            totalStarsEarned += clickValue;
             
             // Combo system
             comboCount++;
+            if (comboCount > highestCombo) highestCombo = comboCount;
             updateCombo();
             
             updateDisplay();
@@ -874,7 +1172,8 @@
         }
 
         function calculateCost(upgrade) {
-            return Math.floor(upgrade.baseCost * Math.pow(1.15, upgrade.owned));
+            const multiplier = upgrade.costMultiplier || 1.15;
+            return Math.floor(upgrade.baseCost * Math.pow(multiplier, upgrade.owned));
         }
 
         function buyUpgrade(upgradeId) {
@@ -1017,6 +1316,218 @@
             });
         }
 
+        function switchTab(tabName) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.dataset.tab === tabName) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        }
+
+        function confirmReset(type) {
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay';
+            overlay.addEventListener('click', closeModal);
+            
+            const modal = document.createElement('div');
+            modal.className = 'confirm-modal';
+            
+            if (type === 'soft') {
+                modal.innerHTML = `
+                    <h3>Soft Reset</h3>
+                    <p>This will reset your stars and upgrades but keep your prestige level.<br>Are you sure?</p>
+                    <div class="confirm-buttons">
+                        <button class="confirm-button yes">Yes, Reset</button>
+                        <button class="confirm-button no">Cancel</button>
+                    </div>
+                `;
+                modal.querySelector('.yes').addEventListener('click', () => performReset('soft'));
+            } else {
+                modal.innerHTML = `
+                    <h3>⚠️ HARD RESET ⚠️</h3>
+                    <p>This will DELETE ALL PROGRESS including prestige!<br>This cannot be undone!<br>Are you absolutely sure?</p>
+                    <div class="confirm-buttons">
+                        <button class="confirm-button yes">Yes, Delete Everything</button>
+                        <button class="confirm-button no">Cancel</button>
+                    </div>
+                `;
+                modal.querySelector('.yes').addEventListener('click', () => performReset('hard'));
+            }
+            
+            modal.querySelector('.no').addEventListener('click', closeModal);
+            
+            document.body.appendChild(overlay);
+            document.body.appendChild(modal);
+        }
+
+        function closeModal() {
+            document.querySelector('.modal-overlay')?.remove();
+            document.querySelector('.confirm-modal')?.remove();
+        }
+
+        function performReset(type) {
+            closeModal();
+            
+            if (type === 'soft') {
+                // Keep prestige, reset everything else
+                score = 0;
+                clickPower = 1 * prestigeBonus;
+                autoClickPower = 0;
+                mainEmojiLevel = 0;
+                achievedMilestones = [];
+                comboCount = 0;
+                highestCombo = 0;
+                
+                // Reset upgrades
+                upgrades.forEach(u => {
+                    u.owned = 0;
+                });
+                
+                // Reset special effects
+                luckyClickChance = 0;
+                criticalClickMultiplier = 1;
+                offlineProgress = 0;
+                
+                document.getElementById('main-emoji').textContent = mainEmojis[0];
+                showAchievement('Game Reset! Prestige kept.');
+            } else {
+                // Hard reset - clear everything
+                localStorage.removeItem('emojiClickerSave');
+                location.reload();
+            }
+            
+            updateDisplay();
+            initializeUpgrades();
+            updateUpgradeStates();
+        }
+
+        function exportSave() {
+            const gameState = {
+                score,
+                clickPower,
+                autoClickPower,
+                mainEmojiLevel,
+                prestigeLevel,
+                prestigeBonus,
+                luckyClickChance,
+                criticalClickMultiplier,
+                offlineProgress,
+                totalClicks,
+                totalStarsEarned,
+                playStartTime,
+                highestCombo,
+                luckyClicks,
+                criticalHits,
+                achievedMilestones,
+                lastSave: Date.now(),
+                version: '2.0',
+                player: 'AscheKumo',
+                upgrades: upgrades.map(u => ({ id: u.id, owned: u.owned }))
+            };
+            
+            const saveData = btoa(JSON.stringify(gameState));
+            const blob = new Blob([saveData], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `emoji-clicker-save-${Date.now()}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showAchievement('Save exported successfully!');
+        }
+
+        function importSave() {
+            document.getElementById('import-file').click();
+        }
+
+        function handleImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const saveData = atob(e.target.result);
+                    const gameState = JSON.parse(saveData);
+                    
+                    // Load the save
+                    loadGameState(gameState);
+                    showAchievement('Save imported successfully!');
+                } catch (error) {
+                    showAchievement('Invalid save file!');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function loadGameState(gameState) {
+            score = gameState.score || 0;
+            clickPower = gameState.clickPower || 1;
+            autoClickPower = gameState.autoClickPower || 0;
+            mainEmojiLevel = gameState.mainEmojiLevel || 0;
+            prestigeLevel = gameState.prestigeLevel || 0;
+            prestigeBonus = gameState.prestigeBonus || 1;
+            luckyClickChance = gameState.luckyClickChance || 0;
+            criticalClickMultiplier = gameState.criticalClickMultiplier || 1;
+            offlineProgress = gameState.offlineProgress || 0;
+            totalClicks = gameState.totalClicks || 0;
+            totalStarsEarned = gameState.totalStarsEarned || 0;
+            playStartTime = gameState.playStartTime || Date.now();
+            highestCombo = gameState.highestCombo || 0;
+            luckyClicks = gameState.luckyClicks || 0;
+            criticalHits = gameState.criticalHits || 0;
+            achievedMilestones = gameState.achievedMilestones || [];
+            
+            // Calculate offline progress
+            if (gameState.lastSave && offlineProgress > 0) {
+                const offlineTime = (Date.now() - gameState.lastSave) / 1000;
+                const offlineEarnings = autoClickPower * prestigeBonus * offlineTime * offlineProgress;
+                if (offlineEarnings > 0) {
+                    score += offlineEarnings;
+                    totalStarsEarned += offlineEarnings;
+                    showAchievement(`Welcome back! Earned ${formatNumber(offlineEarnings)} stars while away!`);
+                }
+            }
+            
+            if (gameState.upgrades) {
+                // Reset all upgrades first
+                upgrades.forEach(u => u.owned = 0);
+                
+                gameState.upgrades.forEach(savedUpgrade => {
+                    const upgrade = upgrades.find(u => u.id === savedUpgrade.id);
+                    if (upgrade) {
+                        upgrade.owned = savedUpgrade.owned;
+                    }
+                });
+            }
+            
+            // Reapply upgrade effects
+            upgrades.forEach(u => {
+                if (u.owned > 0 && u.effect) {
+                    for (let i = 0; i < u.owned; i++) {
+                        u.effect();
+                    }
+                }
+            });
+            
+            recalculateAutoClick();
+            document.getElementById('main-emoji').textContent = mainEmojis[mainEmojiLevel];
+            
+            updateDisplay();
+            initializeUpgrades();
+            updateUpgradeStates();
+        }
+
+        // Animation functions
         function showAchievement(text, isLegendary = false) {
             const achievement = document.createElement('div');
             achievement.className = isLegendary ? 'achievement legendary' : 'achievement';
@@ -1129,9 +1640,25 @@
             setTimeout(() => firework.remove(), 1000);
         }
 
+        function createEmojiRain() {
+            for (let i = 0; i < 20; i++) {
+                setTimeout(() => {
+                    const emoji = document.createElement('div');
+                    emoji.className = 'emoji-rain';
+                    emoji.textContent = mainEmojis[Math.floor(Math.random() * mainEmojis.length)];
+                    emoji.style.left = Math.random() * window.innerWidth + 'px';
+                    emoji.style.animationDuration = (2 + Math.random() * 2) + 's';
+                    document.body.appendChild(emoji);
+                    
+                    setTimeout(() => emoji.remove(), 3000);
+                }, i * 100);
+            }
+        }
+
+        // Special event functions
         function startGoldenEmojiEvents() {
             setInterval(() => {
-                if (Math.random() < 0.01) { // 1% chance every second
+                if (Math.random() < 0.01) {
                     triggerGoldenEmoji();
                 }
             }, 1000);
@@ -1152,13 +1679,13 @@
 
         function startRainbowEvents() {
             setInterval(() => {
-                if (Math.random() < 0.005) { // 0.5% chance every second
+                if (Math.random() < 0.005) {
                     triggerRainbowMode();
                 }
             }, 1000);
         }
 
-        function triggerRainbowMode() {
+                function triggerRainbowMode() {
             const mainEmoji = document.getElementById('main-emoji');
             mainEmoji.classList.add('rainbow');
             rainbowModeActive = true;
@@ -1174,7 +1701,7 @@
 
         function startQuantumEvents() {
             setInterval(() => {
-                if (Math.random() < 0.003) { // 0.3% chance every second
+                if (Math.random() < 0.003) {
                     triggerQuantumMode();
                 }
             }, 1000);
@@ -1195,32 +1722,18 @@
 
         function startInfinityMode() {
             setInterval(() => {
-                if (Math.random() < 0.001) { // 0.1% chance every second
+                if (Math.random() < 0.001) {
                     score *= 1.5;
+                    totalStarsEarned += score * 0.5;
                     showAchievement('♾️ INFINITY BURST! Score x1.5!', true);
                     createSupernova();
                 }
             }, 1000);
         }
 
-        function createEmojiRain() {
-            for (let i = 0; i < 20; i++) {
-                setTimeout(() => {
-                    const emoji = document.createElement('div');
-                    emoji.className = 'emoji-rain';
-                    emoji.textContent = mainEmojis[Math.floor(Math.random() * mainEmojis.length)];
-                    emoji.style.left = Math.random() * window.innerWidth + 'px';
-                    emoji.style.animationDuration = (2 + Math.random() * 2) + 's';
-                    document.body.appendChild(emoji);
-                    
-                    setTimeout(() => emoji.remove(), 3000);
-                }, i * 100);
-            }
-        }
-
         function prestige() {
-            if (score >= 1000000) {
-                const prestigePoints = Math.floor(Math.sqrt(score / 1000000));
+            if (score >= 10000000) {
+                const prestigePoints = Math.floor(Math.sqrt(score / 10000000));
                 prestigeLevel += prestigePoints;
                 prestigeBonus = 1 + (prestigeLevel * 0.1);
                 
@@ -1259,6 +1772,7 @@
                 if (quantumModeActive && Math.random() < 0.3) autoValue *= 20;
                 
                 score += autoValue;
+                totalStarsEarned += autoValue;
                 updateDisplay();
                 
                 if (Math.floor(score) !== Math.floor(lastScore)) {
@@ -1281,87 +1795,56 @@
                 criticalClickMultiplier,
                 offlineProgress,
                 totalClicks,
+                totalStarsEarned,
+                playStartTime,
+                highestCombo,
+                luckyClicks,
+                criticalHits,
                 achievedMilestones,
                 lastSave: Date.now(),
+                version: '2.0',
+                player: 'AscheKumo',
                 upgrades: upgrades.map(u => ({ id: u.id, owned: u.owned }))
             };
             localStorage.setItem('emojiClickerSave', JSON.stringify(gameState));
         }, 1000);
 
-        // Load game state
-        window.onload = () => {
+        // Initialize event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Main emoji click
+            document.getElementById('main-emoji').addEventListener('click', clickEmoji);
+            
+            // Prestige button
+            document.getElementById('prestige-btn').addEventListener('click', prestige);
+            
+            // Tab buttons
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.addEventListener('click', () => switchTab(button.dataset.tab));
+            });
+            
+            // Options buttons
+            document.getElementById('export-btn').addEventListener('click', exportSave);
+            document.getElementById('import-btn').addEventListener('click', importSave);
+            document.getElementById('import-file').addEventListener('change', handleImport);
+            document.getElementById('soft-reset-btn').addEventListener('click', () => confirmReset('soft'));
+            document.getElementById('hard-reset-btn').addEventListener('click', () => confirmReset('hard'));
+            
+            // Load saved game
             const saved = localStorage.getItem('emojiClickerSave');
             if (saved) {
-                const gameState = JSON.parse(saved);
-                score = gameState.score || 0;
-                clickPower = gameState.clickPower || 1;
-                autoClickPower = gameState.autoClickPower || 0;
-                mainEmojiLevel = gameState.mainEmojiLevel || 0;
-                prestigeLevel = gameState.prestigeLevel || 0;
-                prestigeBonus = gameState.prestigeBonus || 1;
-                luckyClickChance = gameState.luckyClickChance || 0;
-                criticalClickMultiplier = gameState.criticalClickMultiplier || 1;
-                offlineProgress = gameState.offlineProgress || 0;
-                totalClicks = gameState.totalClicks || 0;
-                achievedMilestones = gameState.achievedMilestones || [];
-                
-                // Calculate offline progress
-                if (gameState.lastSave && offlineProgress > 0) {
-                    const offlineTime = (Date.now() - gameState.lastSave) / 1000;
-                    const offlineEarnings = autoClickPower * prestigeBonus * offlineTime * offlineProgress;
-                    if (offlineEarnings > 0) {
-                        score += offlineEarnings;
-                        showAchievement(`Welcome back! Earned ${formatNumber(offlineEarnings)} stars while away!`);
-                    }
+                try {
+                    const gameState = JSON.parse(saved);
+                    loadGameState(gameState);
+                } catch (error) {
+                    console.error('Failed to load save:', error);
                 }
-                
-                if (gameState.upgrades) {
-                    gameState.upgrades.forEach(savedUpgrade => {
-                        const upgrade = upgrades.find(u => u.id === savedUpgrade.id);
-                        if (upgrade) {
-                            upgrade.owned = savedUpgrade.owned;
-                        }
-                    });
-                }
-                
-                // Reapply upgrade effects
-                upgrades.forEach(u => {
-                    if (u.owned > 0 && u.effect) {
-                        for (let i = 0; i < u.owned; i++) {
-                            u.effect();
-                        }
-                    }
-                });
-                
-                recalculateAutoClick();
-                document.getElementById('main-emoji').textContent = mainEmojis[mainEmojiLevel];
             }
             
+            // Initialize display
             updateDisplay();
             initializeUpgrades();
             updateUpgradeStates();
-        };
-
-        // Add click event to main emoji
-        document.getElementById('main-emoji').addEventListener('click', clickEmoji);
-
-        // Add CSS for rainbow background animation
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes rainbow-background {
-                0% { background: #0d1117; }
-                20% { background: #1a0d11; }
-                40% { background: #11170d; }
-                60% { background: #0d1117; }
-                80% { background: #110d1a; }
-                100% { background: #0d1117; }
-            }
-        `;
-        document.head.appendChild(style);
-
-        // Initial render
-        updateDisplay();
-        initializeUpgrades();
+        });
     </script>
 </body>
 </html>
