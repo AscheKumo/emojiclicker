@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emoji Autoclicker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #0d1117;
+            color: #c9d1d9;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            user-select: none;
+            overflow-x: hidden;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 30px;
+            background: linear-gradient(45deg, #58a6ff, #79c0ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+        }
+
+        .game-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        .main-panel {
+            background: #161b22;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            border: 1px solid #30363d;
+        }
+
+        .score-display {
+            font-size: 2rem;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #58a6ff;
+        }
+
+        .per-second {
+            font-size: 1rem;
+            text-align: center;
+            margin-bottom: 30px;
+            color: #8b949e;
+        }
+
+        .main-emoji {
+            font-size: 120px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.1s;
+            margin: 40px 0;
+            filter: drop-shadow(0 0 20px rgba(88, 166, 255, 0.5));
+            position: relative;
+        }
+
+        .main-emoji:hover {
+            transform: scale(1.05);
+        }
+
+        .main-emoji:active {
+            transform: scale(0.95);
+        }
+
+        .main-emoji.golden {
+            filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.8));
+            animation: golden-pulse 1s ease-in-out infinite;
+        }
+
+        .main-emoji.rainbow {
+            animation: rainbow-rotate 2s linear infinite;
+            filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.8));
+        }
+
+        .main-emoji.quantum {
+            animation: quantum-phase 1s ease-in-out infinite;
+            filter: drop-shadow(0 0 40px rgba(147, 51, 234, 0.9));
+        }
+
+        @keyframes golden-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes rainbow-rotate {
+            0% { transform: rotate(0deg) scale(1.1); filter: hue-rotate(0deg) drop-shadow(0 0 30px rgba(255, 0, 0, 0.8)); }
+            50% { transform: rotate(180deg) scale(1.2); filter: hue-rotate(180deg) drop-shadow(0 0 40px rgba(0, 255, 255, 0.8)); }
+            100% { transform: rotate(360deg) scale(1.1); filter: hue-rotate(360deg) drop-shadow(0 0 30px rgba(255, 0, 0, 0.8)); }
+        }
+
+        @keyframes quantum-phase {
+            0%, 100% { opacity: 1; transform: scale(1) translateY(0); }
+            25% { opacity: 0.3; transform: scale(0.8) translateY(-10px); }
+            50% { opacity: 1; transform: scale(1.3) translateY(0); }
+            75% { opacity: 0.5; transform: scale(0.9) translateY(10px); }
+        }
+
+        .upgrade-panel {
+            background: #161b22;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            border: 1px solid #30363d;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .upgrade-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #f0f6fc;
+        }
+
+        .upgrade-section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            color: #79c0ff;
+            margin-bottom: 15px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #30363d;
+        }
+
+        .upgrade-item {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .upgrade-item.can-afford:hover {
+            border-color: #58a6ff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(88, 166, 255, 0.2);
+        }
+
+        .upgrade-item.locked {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .upgrade-item.locked:hover {
+            border-color: #30363d;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .upgrade-item.maxed {
+            border-color: #ffd700;
+            background: linear-gradient(135deg, #0d1117, #1a1a00);
+        }
+
+        .upgrade-info {
+            flex: 1;
+        }
+
+        .upgrade-name {
+            font-size: 1.1rem;
+            color: #f0f6fc;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .upgrade-emoji {
+            font-size: 24px;
+        }
+
+        .upgrade-description {
+            font-size: 0.9rem;
+            color: #8b949e;
+            margin-top: 5px;
+        }
+
+        .upgrade-cost {
+            font-size: 1rem;
+            color: #58a6ff;
+            font-weight: bold;
+        }
+
+        .upgrade-owned {
+            font-size: 0.9rem;
+            color: #8b949e;
+            margin-left: 10px;
+        }
+
+        .floating-emoji {
+            position: fixed;
+            font-size: 30px;
+            pointer-events: none;
+            animation: float 2s ease-out forwards;
+            z-index: 1000;
+        }
+
+        @keyframes float {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-100px) scale(1.5);
+            }
+        }
+
+        .combo-multiplier {
+            position: absolute;
+            top: -30px;
+            right: -30px;
+            background: #ff6b6b;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            animation: combo-bounce 0.3s ease-out;
+        }
+
+        @keyframes combo-bounce {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .achievement {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #1f6feb;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(31, 111, 235, 0.4);
+            animation: slideIn 0.3s ease-out;
+            z-index: 1001;
+        }
+
+        .achievement.legendary {
+            background: linear-gradient(45deg, #ffd700, #ff6b6b, #9333ea);
+            animation: slideIn 0.3s ease-out, legendary-glow 2s ease-in-out infinite;
+        }
+
+        @keyframes legendary-glow {
+            0%, 100% { box-shadow: 0 4px 20px rgba(255, 215, 0, 0.6); }
+            50% { box-shadow: 0 4px 40px rgba(255, 107, 107, 0.8); }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+            }
+            to {
+                transform: translateX(0);
+            }
+        }
+
+        .emoji-rain {
+            position: fixed;
+            top: -50px;
+            font-size: 30px;
+            animation: rain 3s linear;
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        @keyframes rain {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+            }
+        }
+
+        .supernova {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 9999;
+            animation: supernova-explosion 3s ease-out forwards;
+        }
+
+        @keyframes supernova-explosion {
+            0% {
+                background: radial-gradient(circle at center, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0) 100%);
+            }
+            20% {
+                background: radial-gradient(circle at center, rgba(255, 255, 255, 1) 0%, rgba(255, 215, 0, 0.8) 30%, rgba(255, 107, 107, 0.6) 60%, rgba(147, 51, 234, 0.4) 100%);
+            }
+            100% {
+                background: radial-gradient(circle at center, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0) 100%);
+                opacity: 0;
+            }
+        }
+
+        .galaxy-spin {
+            position: fixed;
+            width: 200px;
+            height: 200px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 9998;
+        }
+
+        .galaxy-spin::before {
+            content: '🌌';
+            position: absolute;
+            font-size: 200px;
+            animation: galaxy-rotation 5s linear infinite;
+        }
+
+        @keyframes galaxy-rotation {
+            from { transform: rotate(0deg) scale(1); }
+            to { transform: rotate(360deg) scale(1); }
+        }
+
+        .firework {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9997;
+            animation: firework-launch 1s ease-out forwards;
+        }
+
+        @keyframes firework-launch {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-200px) scale(3);
+                opacity: 0;
+            }
+        }
+
+        .prestige-button {
+            background: linear-gradient(45deg, #ff6b6b, #ff8e53);
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            width: 100%;
+            transition: all 0.3s;
+        }
+
+        .prestige-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.4);
+        }
+
+        .prestige-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .bonus-display {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #ffd700;
+        }
+
+        .milestone-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #1f6feb, #9333ea);
+            padding: 30px 50px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(147, 51, 234, 0.6);
+            animation: milestone-appear 0.5s ease-out;
+            z-index: 10000;
+            text-align: center;
+        }
+
+        .milestone-popup h2 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: white;
+        }
+
+        .milestone-popup p {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        @keyframes milestone-appear {
+            from {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 0;
+            }
+            to {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .main-emoji {
+                font-size: 80px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 Emoji Autoclicker 🎮</h1>
+    
+    <div class="game-container">
+        <div class="main-panel">
+            <div class="score-display">
+                <span id="score">0</span> 🌟
+            </div>
+            <div class="per-second">
+                <span id="per-second">0</span> per second
+            </div>
+            <div class="main-emoji" id="main-emoji">
+                😊
+                <div id="combo-display"></div>
+            </div>
+            <div class="bonus-display" id="bonus-display"></div>
+            <button class="prestige-button" id="prestige-btn" onclick="prestige()" disabled>
+                🌟 Prestige (Requires 1M stars) 🌟
+            </button>
+        </div>
+        
+        <div class="upgrade-panel">
+            <h2 class="upgrade-title">Upgrades</h2>
+            <div id="upgrades"></div>
+        </div>
+    </div>
+
+    <script>
+        let score = 0;
+        let clickPower = 1;
+        let autoClickPower = 0;
+        let mainEmojiLevel = 0;
+        let lastScore = -1;
+        let comboCount = 0;
+        let comboTimer = null;
+        let goldenEmojiActive = false;
+        let rainbowModeActive = false;
+        let quantumModeActive = false;
+        let prestigeLevel = 0;
+        let prestigeBonus = 1;
+        let luckyClickChance = 0;
+        let criticalClickMultiplier = 1;
+        let offlineProgress = 0;
+        let totalClicks = 0;
+        let achievedMilestones = [];
+
+        const mainEmojis = ['😊', '😄', '😎', '🤩', '🥳', '🚀', '⭐', '🌟', '✨', '💫'];
+
+        const milestones = [
+            { score: 100, title: "Beginner", message: "Your first 100 stars!" },
+            { score: 1000, title: "Rising Star", message: "1K stars achieved!" },
+            { score: 10000, title: "Emoji Master", message: "10K stars - Impressive!" },
+            { score: 100000, title: "Click Legend", message: "100K stars - Legendary!" },
+            { score: 1000000, title: "Millionaire", message: "1 MILLION stars!" },
+            { score: 10000000, title: "Emoji Tycoon", message: "10M stars - Incredible!" },
+            { score: 100000000, title: "Click God", message: "100M stars - Godlike!" },
+            { score: 1000000000, title: "Billion Club", message: "1 BILLION stars!" },
+            { score: 1000000000000, title: "Universe Master", message: "1 TRILLION stars!" }
+        ];
+
+        const upgrades = [
+            // Auto-clickers
+            {
+                id: 'cursor',
+                name: 'Auto Cursor',
+                emoji: '👆',
+                baseCost: 10,
+                power: 0.1,
+                owned: 0,
+                description: 'Automatically clicks for you',
+                category: 'auto'
+            },
+            {
+                id: 'helper',
+                name: 'Emoji Helper',
+                emoji: '🤝',
+                baseCost: 50,
+                power: 0.5,
+                owned: 0,
+                description: 'A friendly helper emoji',
+                category: 'auto'
+            },
+            {
+                id: 'robot',
+                name: 'Click Bot',
+                emoji: '🤖',
+                baseCost: 200,
+                power: 2,
+                owned: 0,
+                description: 'Advanced clicking robot',
+                category: 'auto'
+            },
+            {
+                id: 'ninja',
+                name: 'Ninja Clicker',
+                emoji: '🥷',
+                baseCost: 800,
+                power: 8,
+                owned: 0,
+                description: 'Silent but efficient',
+                category: 'auto'
+            },
+            {
+                id: 'factory',
+                name: 'Emoji Factory',
+                emoji: '🏭',
+                baseCost: 3000,
+                power: 30,
+                owned: 0,
+                description: 'Mass produces clicks',
+                category: 'auto'
+            },
+            {
+                id: 'wizard',
+                name: 'Click Wizard',
+                emoji: '🧙‍♂️',
+                baseCost: 12000,
+                power: 120,
+                owned: 0,
+                description: 'Magical clicking powers',
+                category: 'auto'
+            },
+            {
+                id: 'alien',
+                name: 'Alien Technology',
+                emoji: '👽',
+                baseCost: 50000,
+                power: 500,
+                owned: 0,
+                description: 'Out of this world clicking',
+                category: 'auto'
+            },
+            {
+                id: 'dragon',
+                name: 'Click Dragon',
+                emoji: '🐉',
+                baseCost: 200000,
+                power: 2000,
+                owned: 0,
+                description: 'Legendary clicking beast',
+                category: 'auto'
+            },
+            {
+                id: 'quantum',
+                name: 'Quantum Computer',
+                emoji: '💻',
+                baseCost: 1000000,
+                power: 10000,
+                owned: 0,
+                description: 'Clicks in multiple dimensions',
+                category: 'auto'
+            },
+            {
+                id: 'blackhole',
+                name: 'Black Hole',
+                emoji: '🕳️',
+                baseCost: 10000000,
+                power: 100000,
+                owned: 0,
+                description: 'Absorbs clicks from the void',
+                category: 'auto'
+            },
+            {
+                id: 'universe',
+                name: 'Universe Engine',
+                emoji: '🌌',
+                baseCost: 100000000,
+                power: 1000000,
+                owned: 0,
+                description: 'Harnesses cosmic energy',
+                category: 'auto'
+            },
+            // Power-ups
+            {
+                id: 'doubleclick',
+                name: 'Double Click',
+                emoji: '✌️',
+                baseCost: 100,
+                power: 1,
+                owned: 0,
+                maxOwned: 10,
+                description: 'Doubles your click power',
+                category: 'power',
+                effect: () => { clickPower *= 2; }
+            },
+            {
+                id: 'turbo',
+                name: 'Turbo Mode',
+                emoji: '⚡',
+                baseCost: 300,
+                power: 0.2,
+                owned: 0,
+                maxOwned: 15,
+                description: 'All auto-clickers +20% speed',
+                category: 'power',
+                effect: () => { 
+                    upgrades.forEach(u => {
+                        if (u.category === 'auto') u.power *= 1.2;
+                    });
+                    recalculateAutoClick();
+                }
+            },
+            {
+                id: 'lucky',
+                name: 'Lucky Charm',
+                emoji: '🍀',
+                baseCost: 500,
+                power: 0.05,
+                owned: 0,
+                maxOwned: 20,
+                description: '5% chance for 10x clicks',
+                category: 'power',
+                effect: () => { luckyClickChance += 0.05; }
+            },
+            {
+                id: 'critical',
+                name: 'Critical Hit',
+                emoji: '💥',
+                baseCost: 2000,
+                power: 0.5,
+                owned: 0,
+                maxOwned: 10,
+                description: 'Critical clicks deal +50% damage',
+                category: 'power',
+                effect: () => { criticalClickMultiplier += 0.5; }
+            },
+            {
+                id: 'combo',
+                name: 'Combo Master',
+                emoji: '🔥',
+                baseCost: 5000,
+                power: 0,
+                owned: 0,
+                maxOwned: 5,
+                description: 'Combos last 50% longer',
+                category: 'power',
+                effect: () => { /* Implemented in combo logic */ }
+            },
+            {
+                id: 'multiplier',
+                name: 'Star Multiplier',
+                emoji: '✖️',
+                baseCost: 20000,
+                power: 0,
+                owned: 0,
+                maxOwned: 3,
+                description: 'All earnings x2',
+                category: 'power',
+                effect: () => { prestigeBonus *= 2; }
+            },
+            // Special
+            {
+                id: 'golden',
+                name: 'Golden Touch',
+                emoji: '👑',
+                baseCost: 10000,
+                power: 0,
+                owned: 0,
+                maxOwned: 1,
+                description: 'Random golden emoji events',
+                category: 'special',
+                effect: () => { startGoldenEmojiEvents(); }
+            },
+            {
+                id: 'rainbow',
+                name: 'Rainbow Mode',
+                emoji: '🌈',
+                baseCost: 50000,
+                power: 0,
+                owned: 0,
+                maxOwned: 1,
+                description: 'Activate rainbow power surges',
+                category: 'special',
+                effect: () => { startRainbowEvents(); }
+            },
+            {
+                id: 'timewarp',
+                name: 'Time Warp',
+                emoji: '⏰',
+                baseCost: 100000,
+                power: 0,
+                owned: 0,
+                maxOwned: 1,
+                description: 'Earn 50% offline progress',
+                category: 'special',
+                effect: () => { offlineProgress = 0.5; }
+            },
+            {
+                id: 'quantum',
+                name: 'Quantum Leap',
+                emoji: '⚛️',
+                baseCost: 500000,
+                power: 0,
+                owned: 0,
+                maxOwned: 1,
+                description: 'Quantum clicking phenomena',
+                category: 'special',
+                effect: () => { startQuantumEvents(); }
+            },
+            {
+                id: 'infinity',
+                name: 'Infinity Mode',
+                emoji: '♾️',
+                baseCost: 10000000,
+                power: 0,
+                owned: 0,
+                maxOwned: 1,
+                description: 'Exponential growth bursts',
+                category: 'special',
+                effect: () => { startInfinityMode(); }
+            }
+        ];
+
+        // Store references to upgrade elements
+        const upgradeElements = {};
+
+        function formatNumber(num) {
+            if (num >= 1e15) return (num / 1e15).toFixed(1) + 'Q';
+            if (num >= 1e12) return (num / 1e12).toFixed(1) + 'T';
+            if (num >= 1e9) return (num / 1e9).toFixed(1) + 'B';
+            if (num >= 1e6) return (num / 1e6).toFixed(1) + 'M';
+            if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
+            return Math.floor(num).toString();
+        }
+
+        function updateDisplay() {
+            document.getElementById('score').textContent = formatNumber(score);
+            document.getElementById('per-second').textContent = formatNumber(autoClickPower * prestigeBonus);
+            
+            // Update main emoji based on score
+            const newLevel = Math.min(Math.floor(Math.log10(score + 1)), mainEmojis.length - 1);
+            if (newLevel > mainEmojiLevel) {
+                mainEmojiLevel = newLevel;
+                document.getElementById('main-emoji').textContent = mainEmojis[mainEmojiLevel];
+                showAchievement(`New Emoji Unlocked: ${mainEmojis[mainEmojiLevel]}`);
+                createFireworks();
+            }
+
+            // Check milestones
+            milestones.forEach(milestone => {
+                if (score >= milestone.score && !achievedMilestones.includes(milestone.score)) {
+                    achievedMilestones.push(milestone.score);
+                    showMilestone(milestone);
+                    triggerMilestoneAnimation(milestone.score);
+                }
+            });
+
+            // Update prestige button
+            const prestigeBtn = document.getElementById('prestige-btn');
+            if (score >= 1000000) {
+                prestigeBtn.disabled = false;
+                prestigeBtn.textContent = `🌟 Prestige for ${Math.floor(Math.sqrt(score / 1000000))} prestige points 🌟`;
+            }
+
+            // Update bonus display
+            updateBonusDisplay();
+        }
+
+        function updateBonusDisplay() {
+            const bonuses = [];
+            if (prestigeBonus > 1) bonuses.push(`Prestige: ${prestigeBonus.toFixed(1)}x`);
+            if (luckyClickChance > 0) bonuses.push(`Lucky: ${(luckyClickChance * 100).toFixed(0)}%`);
+            if (criticalClickMultiplier > 1) bonuses.push(`Crit: ${criticalClickMultiplier.toFixed(1)}x`);
+            
+            document.getElementById('bonus-display').textContent = bonuses.join(' | ');
+        }
+
+        function clickEmoji(event) {
+            totalClicks++;
+            let clickValue = clickPower * prestigeBonus;
+            
+            // Apply special mode multipliers
+            if (goldenEmojiActive) clickValue *= 10;
+            if (rainbowModeActive) clickValue *= 5;
+            if (quantumModeActive && Math.random() < 0.3) clickValue *= 20;
+            
+            // Lucky click
+            if (Math.random() < luckyClickChance) {
+                clickValue *= 10;
+                showFloatingText(event, `LUCKY! +${formatNumber(clickValue)}🌟`, '#ffd700');
+            }
+            // Critical click
+            else if (Math.random() < 0.1) {
+                clickValue *= criticalClickMultiplier;
+                showFloatingText(event, `CRIT! +${formatNumber(clickValue)}🌟`, '#ff6b6b');
+            }
+            // Normal click
+            else {
+                showFloatingText(event, `+${formatNumber(clickValue)}🌟`, '#58a6ff');
+            }
+            
+            score += clickValue;
+            
+            // Combo system
+            comboCount++;
+            updateCombo();
+            
+            updateDisplay();
+            updateUpgradeStates();
+        }
+
+        function updateCombo() {
+            clearTimeout(comboTimer);
+            
+            const comboDisplay = document.getElementById('combo-display');
+            const comboUpgrade = upgrades.find(u => u.id === 'combo');
+            const comboDuration = 1000 * (1 + comboUpgrade.owned * 0.5);
+            
+            if (comboCount > 1) {
+                comboDisplay.innerHTML = `<div class="combo-multiplier">x${comboCount}</div>`;
+                clickPower = (1 + comboCount * 0.1) * prestigeBonus;
+            }
+            
+            comboTimer = setTimeout(() => {
+                comboCount = 0;
+                comboDisplay.innerHTML = '';
+                clickPower = 1 * prestigeBonus;
+            }, comboDuration);
+        }
+
+        function showFloatingText(event, text, color = '#58a6ff') {
+            const emoji = document.createElement('div');
+            emoji.className = 'floating-emoji';
+            emoji.textContent = text;
+            emoji.style.color = color;
+            emoji.style.left = (event.clientX - 15) + 'px';
+            emoji.style.top = (event.clientY - 15) + 'px';
+            document.body.appendChild(emoji);
+            
+            setTimeout(() => emoji.remove(), 2000);
+        }
+
+        function calculateCost(upgrade) {
+            return Math.floor(upgrade.baseCost * Math.pow(1.15, upgrade.owned));
+        }
+
+        function buyUpgrade(upgradeId) {
+            const upgrade = upgrades.find(u => u.id === upgradeId);
+            const cost = calculateCost(upgrade);
+            
+            if (score >= cost && (!upgrade.maxOwned || upgrade.owned < upgrade.maxOwned)) {
+                score -= cost;
+                upgrade.owned++;
+                
+                if (upgrade.category === 'auto') {
+                    recalculateAutoClick();
+                } else if (upgrade.effect) {
+                    upgrade.effect();
+                }
+                
+                updateDisplay();
+                updateUpgradeElement(upgrade);
+                updateUpgradeStates();
+                
+                // Special achievements
+                if (upgrade.owned === 1) {
+                    showAchievement(`First ${upgrade.name} purchased!`);
+                } else if (upgrade.owned === upgrade.maxOwned) {
+                    showAchievement(`${upgrade.name} MAXED OUT!`, true);
+                    createFireworks();
+                }
+            }
+        }
+
+        function recalculateAutoClick() {
+            autoClickPower = 0;
+            upgrades.forEach(u => {
+                if (u.category === 'auto') {
+                    autoClickPower += u.power * u.owned;
+                }
+            });
+        }
+
+        function createUpgradeElement(upgrade) {
+            const cost = calculateCost(upgrade);
+            const canAfford = score >= cost;
+            const isMaxed = upgrade.maxOwned && upgrade.owned >= upgrade.maxOwned;
+            
+            const upgradeEl = document.createElement('div');
+            upgradeEl.className = `upgrade-item ${isMaxed ? 'maxed' : (canAfford ? 'can-afford' : 'locked')}`;
+            upgradeEl.dataset.upgradeId = upgrade.id;
+            
+            const ownedText = upgrade.maxOwned ? `(${upgrade.owned}/${upgrade.maxOwned})` : `(${upgrade.owned})`;
+            
+            upgradeEl.innerHTML = `
+                <div class="upgrade-info">
+                    <div class="upgrade-name">
+                        <span class="upgrade-emoji">${upgrade.emoji}</span>
+                        ${upgrade.name}
+                        <span class="upgrade-owned">${ownedText}</span>
+                    </div>
+                    <div class="upgrade-description">${upgrade.description}</div>
+                </div>
+                <div class="upgrade-cost">${isMaxed ? 'MAXED' : formatNumber(cost) + ' 🌟'}</div>
+            `;
+            
+            if (!isMaxed) {
+                upgradeEl.addEventListener('click', () => {
+                    if (score >= calculateCost(upgrade)) {
+                        buyUpgrade(upgrade.id);
+                    }
+                });
+            }
+            
+            return upgradeEl;
+        }
+
+        function updateUpgradeElement(upgrade) {
+            const el = upgradeElements[upgrade.id];
+            if (!el) return;
+            
+            const cost = calculateCost(upgrade);
+            const canAfford = score >= cost;
+            const isMaxed = upgrade.maxOwned && upgrade.owned >= upgrade.maxOwned;
+            
+            // Update classes
+            el.className = `upgrade-item ${isMaxed ? 'maxed' : (canAfford ? 'can-afford' : 'locked')}`;
+            
+            // Update content
+            const ownedText = upgrade.maxOwned ? `(${upgrade.owned}/${upgrade.maxOwned})` : `(${upgrade.owned})`;
+            el.querySelector('.upgrade-owned').textContent = ownedText;
+            el.querySelector('.upgrade-cost').textContent = isMaxed ? 'MAXED' : `${formatNumber(cost)} 🌟`;
+        }
+
+        function updateUpgradeStates() {
+            upgrades.forEach(upgrade => {
+                const el = upgradeElements[upgrade.id];
+                if (!el) return;
+                
+                const cost = calculateCost(upgrade);
+                const canAfford = score >= cost;
+                const wasAffordable = el.classList.contains('can-afford');
+                const isMaxed = upgrade.maxOwned && upgrade.owned >= upgrade.maxOwned;
+                
+                if (!isMaxed && canAfford !== wasAffordable) {
+                    if (canAfford) {
+                        el.classList.add('can-afford');
+                        el.classList.remove('locked');
+                    } else {
+                        el.classList.remove('can-afford');
+                        el.classList.add('locked');
+                    }
+                }
+            });
+        }
+
+        function initializeUpgrades() {
+            const container = document.getElementById('upgrades');
+            container.innerHTML = '';
+            
+            // Group upgrades by category
+            const categories = {
+                'auto': 'Auto-Clickers',
+                'power': 'Power-Ups',
+                'special': 'Special Abilities'
+            };
+            
+            Object.entries(categories).forEach(([catId, catName]) => {
+                const section = document.createElement('div');
+                section.className = 'upgrade-section';
+                
+                const title = document.createElement('div');
+                title.className = 'section-title';
+                title.textContent = catName;
+                section.appendChild(title);
+                
+                upgrades.filter(u => u.category === catId).forEach(upgrade => {
+                    const el = createUpgradeElement(upgrade);
+                    upgradeElements[upgrade.id] = el;
+                    section.appendChild(el);
+                });
+                
+                container.appendChild(section);
+            });
+        }
+
+        function showAchievement(text, isLegendary = false) {
+            const achievement = document.createElement('div');
+            achievement.className = isLegendary ? 'achievement legendary' : 'achievement';
+            achievement.textContent = '🏆 ' + text;
+            document.body.appendChild(achievement);
+            
+            setTimeout(() => achievement.remove(), 3000);
+        }
+
+        function showMilestone(milestone) {
+            const popup = document.createElement('div');
+            popup.className = 'milestone-popup';
+            popup.innerHTML = `
+                <h2>🎉 ${milestone.title} 🎉</h2>
+                <p>${milestone.message}</p>
+            `;
+            document.body.appendChild(popup);
+            
+            setTimeout(() => popup.remove(), 3000);
+        }
+
+        function triggerMilestoneAnimation(score) {
+            if (score >= 1000000000) {
+                createSupernova();
+            } else if (score >= 100000000) {
+                createGalaxyEffect();
+            } else if (score >= 10000000) {
+                createMassiveFireworks();
+            } else if (score >= 1000000) {
+                createEmojiStorm();
+            } else if (score >= 100000) {
+                createRainbowWave();
+            } else {
+                createFireworks();
+            }
+        }
+
+        function createSupernova() {
+            const supernova = document.createElement('div');
+            supernova.className = 'supernova';
+            document.body.appendChild(supernova);
+            
+            setTimeout(() => supernova.remove(), 3000);
+        }
+
+        function createGalaxyEffect() {
+            const galaxy = document.createElement('div');
+            galaxy.className = 'galaxy-spin';
+            document.body.appendChild(galaxy);
+            
+            setTimeout(() => galaxy.remove(), 5000);
+        }
+
+        function createMassiveFireworks() {
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    createFireworkAt(
+                        Math.random() * window.innerWidth,
+                        window.innerHeight - 50
+                    );
+                }, i * 50);
+            }
+        }
+
+        function createEmojiStorm() {
+            const stormEmojis = ['🌟', '✨', '💫', '⭐', '🌠', '💥', '🎆', '🎇'];
+            for (let i = 0; i < 100; i++) {
+                setTimeout(() => {
+                    const emoji = document.createElement('div');
+                    emoji.className = 'emoji-rain';
+                    emoji.textContent = stormEmojis[Math.floor(Math.random() * stormEmojis.length)];
+                    emoji.style.left = Math.random() * window.innerWidth + 'px';
+                    emoji.style.animationDuration = (1 + Math.random() * 2) + 's';
+                    emoji.style.fontSize = (20 + Math.random() * 40) + 'px';
+                    document.body.appendChild(emoji);
+                    
+                    setTimeout(() => emoji.remove(), 3000);
+                }, i * 20);
+            }
+        }
+
+        function createRainbowWave() {
+            document.body.style.animation = 'rainbow-background 2s ease-in-out';
+            setTimeout(() => {
+                document.body.style.animation = '';
+            }, 2000);
+        }
+
+        function createFireworks() {
+            for (let i = 0; i < 5; i++) {
+                setTimeout(() => {
+                    createFireworkAt(
+                        Math.random() * window.innerWidth,
+                        window.innerHeight - 50
+                    );
+                }, i * 200);
+            }
+        }
+
+        function createFireworkAt(x, y) {
+            const colors = ['🎆', '🎇', '✨', '💥', '🌟'];
+            const firework = document.createElement('div');
+            firework.className = 'firework';
+            firework.textContent = colors[Math.floor(Math.random() * colors.length)];
+            firework.style.left = x + 'px';
+            firework.style.top = y + 'px';
+            firework.style.fontSize = '40px';
+            document.body.appendChild(firework);
+            
+            setTimeout(() => firework.remove(), 1000);
+        }
+
+        function startGoldenEmojiEvents() {
+            setInterval(() => {
+                if (Math.random() < 0.01) { // 1% chance every second
+                    triggerGoldenEmoji();
+                }
+            }, 1000);
+        }
+
+        function triggerGoldenEmoji() {
+            const mainEmoji = document.getElementById('main-emoji');
+            mainEmoji.classList.add('golden');
+            goldenEmojiActive = true;
+            
+            showAchievement('Golden Emoji Active! 10x clicks for 10 seconds!');
+            
+            setTimeout(() => {
+                mainEmoji.classList.remove('golden');
+                goldenEmojiActive = false;
+            }, 10000);
+        }
+
+        function startRainbowEvents() {
+            setInterval(() => {
+                if (Math.random() < 0.005) { // 0.5% chance every second
+                    triggerRainbowMode();
+                }
+            }, 1000);
+        }
+
+        function triggerRainbowMode() {
+            const mainEmoji = document.getElementById('main-emoji');
+            mainEmoji.classList.add('rainbow');
+            rainbowModeActive = true;
+            
+            showAchievement('🌈 Rainbow Mode! 5x clicks for 15 seconds!', true);
+            createRainbowWave();
+            
+            setTimeout(() => {
+                mainEmoji.classList.remove('rainbow');
+                rainbowModeActive = false;
+            }, 15000);
+        }
+
+        function startQuantumEvents() {
+            setInterval(() => {
+                if (Math.random() < 0.003) { // 0.3% chance every second
+                    triggerQuantumMode();
+                }
+            }, 1000);
+        }
+
+        function triggerQuantumMode() {
+            const mainEmoji = document.getElementById('main-emoji');
+            mainEmoji.classList.add('quantum');
+            quantumModeActive = true;
+            
+            showAchievement('⚛️ Quantum Mode! Unstable clicks!', true);
+            
+            setTimeout(() => {
+                mainEmoji.classList.remove('quantum');
+                quantumModeActive = false;
+            }, 8000);
+        }
+
+        function startInfinityMode() {
+            setInterval(() => {
+                if (Math.random() < 0.001) { // 0.1% chance every second
+                    score *= 1.5;
+                    showAchievement('♾️ INFINITY BURST! Score x1.5!', true);
+                    createSupernova();
+                }
+            }, 1000);
+        }
+
+        function createEmojiRain() {
+            for (let i = 0; i < 20; i++) {
+                setTimeout(() => {
+                    const emoji = document.createElement('div');
+                    emoji.className = 'emoji-rain';
+                    emoji.textContent = mainEmojis[Math.floor(Math.random() * mainEmojis.length)];
+                    emoji.style.left = Math.random() * window.innerWidth + 'px';
+                    emoji.style.animationDuration = (2 + Math.random() * 2) + 's';
+                    document.body.appendChild(emoji);
+                    
+                    setTimeout(() => emoji.remove(), 3000);
+                }, i * 100);
+            }
+        }
+
+        function prestige() {
+            if (score >= 1000000) {
+                const prestigePoints = Math.floor(Math.sqrt(score / 1000000));
+                prestigeLevel += prestigePoints;
+                prestigeBonus = 1 + (prestigeLevel * 0.1);
+                
+                // Reset game but keep prestige
+                score = 0;
+                clickPower = 1 * prestigeBonus;
+                autoClickPower = 0;
+                mainEmojiLevel = 0;
+                achievedMilestones = [];
+                
+                // Reset upgrades but not special ones
+                upgrades.forEach(u => {
+                    if (u.category !== 'special' || u.id === 'golden') {
+                        u.owned = 0;
+                    }
+                });
+                
+                document.getElementById('main-emoji').textContent = mainEmojis[0];
+                
+                showAchievement(`Prestige! +${prestigePoints} prestige points! Total: ${prestigeLevel}`, true);
+                createEmojiRain();
+                createMassiveFireworks();
+                
+                updateDisplay();
+                initializeUpgrades();
+                updateUpgradeStates();
+            }
+        }
+
+        // Auto-clicking loop
+        setInterval(() => {
+            if (autoClickPower > 0) {
+                let autoValue = (autoClickPower * prestigeBonus) / 10;
+                if (goldenEmojiActive) autoValue *= 10;
+                if (rainbowModeActive) autoValue *= 5;
+                if (quantumModeActive && Math.random() < 0.3) autoValue *= 20;
+                
+                score += autoValue;
+                updateDisplay();
+                
+                if (Math.floor(score) !== Math.floor(lastScore)) {
+                    updateUpgradeStates();
+                    lastScore = score;
+                }
+            }
+        }, 100);
+
+        // Save game state
+        setInterval(() => {
+            const gameState = {
+                score,
+                clickPower,
+                autoClickPower,
+                mainEmojiLevel,
+                prestigeLevel,
+                prestigeBonus,
+                luckyClickChance,
+                criticalClickMultiplier,
+                offlineProgress,
+                totalClicks,
+                achievedMilestones,
+                lastSave: Date.now(),
+                upgrades: upgrades.map(u => ({ id: u.id, owned: u.owned }))
+            };
+            localStorage.setItem('emojiClickerSave', JSON.stringify(gameState));
+        }, 1000);
+
+        // Load game state
+        window.onload = () => {
+            const saved = localStorage.getItem('emojiClickerSave');
+            if (saved) {
+                const gameState = JSON.parse(saved);
+                score = gameState.score || 0;
+                clickPower = gameState.clickPower || 1;
+                autoClickPower = gameState.autoClickPower || 0;
+                mainEmojiLevel = gameState.mainEmojiLevel || 0;
+                prestigeLevel = gameState.prestigeLevel || 0;
+                prestigeBonus = gameState.prestigeBonus || 1;
+                luckyClickChance = gameState.luckyClickChance || 0;
+                criticalClickMultiplier = gameState.criticalClickMultiplier || 1;
+                offlineProgress = gameState.offlineProgress || 0;
+                totalClicks = gameState.totalClicks || 0;
+                achievedMilestones = gameState.achievedMilestones || [];
+                
+                // Calculate offline progress
+                if (gameState.lastSave && offlineProgress > 0) {
+                    const offlineTime = (Date.now() - gameState.lastSave) / 1000;
+                    const offlineEarnings = autoClickPower * prestigeBonus * offlineTime * offlineProgress;
+                    if (offlineEarnings > 0) {
+                        score += offlineEarnings;
+                        showAchievement(`Welcome back! Earned ${formatNumber(offlineEarnings)} stars while away!`);
+                    }
+                }
+                
+                if (gameState.upgrades) {
+                    gameState.upgrades.forEach(savedUpgrade => {
+                        const upgrade = upgrades.find(u => u.id === savedUpgrade.id);
+                        if (upgrade) {
+                            upgrade.owned = savedUpgrade.owned;
+                        }
+                    });
+                }
+                
+                // Reapply upgrade effects
+                upgrades.forEach(u => {
+                    if (u.owned > 0 && u.effect) {
+                        for (let i = 0; i < u.owned; i++) {
+                            u.effect();
+                        }
+                    }
+                });
+                
+                recalculateAutoClick();
+                document.getElementById('main-emoji').textContent = mainEmojis[mainEmojiLevel];
+            }
+            
+            updateDisplay();
+            initializeUpgrades();
+            updateUpgradeStates();
+        };
+
+        // Add click event to main emoji
+        document.getElementById('main-emoji').addEventListener('click', clickEmoji);
+
+        // Add CSS for rainbow background animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes rainbow-background {
+                0% { background: #0d1117; }
+                20% { background: #1a0d11; }
+                40% { background: #11170d; }
+                60% { background: #0d1117; }
+                80% { background: #110d1a; }
+                100% { background: #0d1117; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Initial render
+        updateDisplay();
+        initializeUpgrades();
+    </script>
+</body>
+</html>
